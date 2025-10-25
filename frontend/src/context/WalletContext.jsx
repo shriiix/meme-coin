@@ -25,13 +25,16 @@ export const WalletProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Initialize wallet kit
     const walletKit = new StellarWalletsKit({
       network: WalletNetwork.TESTNET,
       selectedWalletId: FREIGHTER_ID,
       modules: [new FreighterModule(), new xBullModule()],
     });
+
     setKit(walletKit);
 
+    // Check for saved connection
     const savedPublicKey = localStorage.getItem("walletPublicKey");
     if (savedPublicKey) {
       setPublicKey(savedPublicKey);
@@ -40,21 +43,32 @@ export const WalletProvider = ({ children }) => {
   }, []);
 
   const connectWallet = async () => {
+    if (!kit) {
+      toast.error("Wallet kit not initialized");
+      return;
+    }
+
     setIsLoading(true);
     try {
       await kit.openModal({
         onWalletSelected: async (option) => {
-          kit.setWallet(option.id);
-          const { address } = await kit.getAddress();
-          setPublicKey(address);
-          setIsConnected(true);
-          localStorage.setItem("walletPublicKey", address);
-          toast.success("Wallet connected successfully!");
+          try {
+            kit.setWallet(option.id);
+            const { address } = await kit.getAddress();
+
+            setPublicKey(address);
+            setIsConnected(true);
+            localStorage.setItem("walletPublicKey", address);
+            toast.success("Wallet connected successfully!");
+          } catch (error) {
+            console.error("Failed to get address:", error);
+            toast.error("Failed to connect wallet");
+          }
         },
       });
     } catch (error) {
       console.error("Wallet connection failed:", error);
-      toast.error("Failed to connect wallet. Please try again.");
+      toast.error("Failed to connect wallet");
     } finally {
       setIsLoading(false);
     }
@@ -67,22 +81,8 @@ export const WalletProvider = ({ children }) => {
     toast.success("Wallet disconnected");
   };
 
-  // Custom sign method that works with the kit
-  const signTransaction = async (xdr, options) => {
-    try {
-      const result = await kit.sign(xdr, options);
-      return result;
-    } catch (error) {
-      console.error("Sign failed:", error);
-      throw error;
-    }
-  };
-
   const value = {
-    kit: {
-      ...kit,
-      sign: signTransaction,
-    },
+    kit,
     publicKey,
     isConnected,
     isLoading,
