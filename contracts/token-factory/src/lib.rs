@@ -4,7 +4,7 @@ mod storage;
 mod types;
 
 use soroban_sdk::{
-    contract, contractimpl, Address, Env, String, Symbol, Vec, Bytes, BytesN,
+    contract, contractimpl, Address, Env, String, Symbol, Vec, Bytes, BytesN, Val, IntoVal,
 };
 
 use storage::*;
@@ -50,12 +50,15 @@ impl TokenFactory {
         counter += 1;
 
         // Create salt for unique deployment
-        let mut salt_data = Bytes::new(&e);
-        salt_data.append(&name.clone().into());
-        salt_data.append(&symbol.clone().into());
-        salt_data.append(&counter.to_string().into());
-        
-        let salt = e.crypto().sha256(&salt_data);
+        let salt = e.crypto().sha256(&Bytes::from_array(
+            &e,
+            &[
+                counter as u8,
+                (counter >> 8) as u8,
+                (counter >> 16) as u8,
+                (counter >> 24) as u8,
+            ],
+        ));
 
         // Deploy token contract
         let token_wasm_hash = get_token_wasm_hash(&e);
@@ -66,25 +69,21 @@ impl TokenFactory {
 
         // Initialize the deployed token
         let init_fn = Symbol::new(&e, "initialize");
-        let _: () = e.invoke_contract(
-            &deployed_address,
-            &init_fn,
-            (
-                &creator,
-                &decimals,
-                &name.clone(),
-                &symbol.clone(),
-            )
-                .into(),
-        );
+        let mut init_args = Vec::new(&e);
+        init_args.push_back(creator.to_val());
+        init_args.push_back(decimals.into_val(&e));
+        init_args.push_back(name.to_val());
+        init_args.push_back(symbol.to_val());
+        
+        let _: Val = e.invoke_contract(&deployed_address, &init_fn, init_args);
 
         // Mint initial supply to creator
         let mint_fn = Symbol::new(&e, "mint");
-        let _: () = e.invoke_contract(
-            &deployed_address,
-            &mint_fn,
-            (&creator, &initial_supply).into(),
-        );
+        let mut mint_args = Vec::new(&e);
+        mint_args.push_back(creator.to_val());
+        mint_args.push_back(initial_supply.into_val(&e));
+        
+        let _: Val = e.invoke_contract(&deployed_address, &mint_fn, mint_args);
 
         // Store token info
         let token_info = TokenInfo {
@@ -159,23 +158,15 @@ mod test {
     use soroban_sdk::{testutils::Address as _, Env};
 
     #[test]
-    fn test_create_token() {
+    fn test_initialize() {
         let e = Env::default();
         let contract_id = e.register_contract(None, TokenFactory);
         let client = TokenFactoryClient::new(&e, &contract_id);
 
         let admin = Address::generate(&e);
-        let creator = Address::generate(&e);
-        
-        // Mock token WASM hash
         let token_wasm_hash = BytesN::from_array(&e, &[0u8; 32]);
 
-        // Initialize
         client.initialize(&admin, &token_wasm_hash);
-
-        // Create token would fail here without actual token WASM
-        // This is just structure testing
         assert_eq!(client.get_token_count(), 0);
     }
 }
-

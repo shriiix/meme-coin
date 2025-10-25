@@ -1,7 +1,6 @@
 import * as StellarSdk from "stellar-sdk";
 import { StellarService } from "./stellarService";
 import { CONTRACTS } from "../config/contracts.config";
-import { xlmToSroops } from "../utils/formatting";
 
 export class TokenFactoryService extends StellarService {
   constructor(walletKit, publicKey) {
@@ -11,24 +10,31 @@ export class TokenFactoryService extends StellarService {
 
   async createToken(name, symbol, decimals, initialSupply) {
     if (!this.contractId) {
-      throw new Error("Token Factory contract not configured");
+      throw new Error(
+        "Token Factory contract not configured. Please check your .env file."
+      );
     }
 
-    const params = [
-      StellarSdk.Address.fromString(this.publicKey).toScVal(),
-      StellarSdk.nativeToScVal(name, { type: "string" }),
-      StellarSdk.nativeToScVal(symbol, { type: "string" }),
-      StellarSdk.nativeToScVal(decimals, { type: "u32" }),
-      StellarSdk.nativeToScVal(xlmToSroops(initialSupply), { type: "i128" }),
-    ];
+    try {
+      const params = [
+        new StellarSdk.Address(this.publicKey).toScVal(),
+        StellarSdk.nativeToScVal(name, { type: "string" }),
+        StellarSdk.nativeToScVal(symbol, { type: "string" }),
+        StellarSdk.nativeToScVal(decimals, { type: "u32" }),
+        StellarSdk.nativeToScVal(parseInt(initialSupply), { type: "i128" }),
+      ];
 
-    const result = await this.invokeContract(
-      this.contractId,
-      "create_token",
-      params
-    );
+      const result = await this.invokeContract(
+        this.contractId,
+        "create_token",
+        params
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      console.error("Token creation failed:", error);
+      throw new Error(error.message || "Failed to create token");
+    }
   }
 
   async getTokenCount() {
@@ -96,7 +102,7 @@ export class TokenFactoryService extends StellarService {
     }
 
     try {
-      const params = [StellarSdk.Address.fromString(creatorAddress).toScVal()];
+      const params = [new StellarSdk.Address(creatorAddress).toScVal()];
       const tokenIds = await this.simulateContract(
         this.contractId,
         "get_creator_tokens",

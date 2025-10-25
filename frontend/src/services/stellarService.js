@@ -1,44 +1,78 @@
 import * as StellarSdk from "stellar-sdk";
 import { STELLAR_CONFIG } from "../config/stellar.config";
-import { TRANSACTION_STATUS } from "../utils/constants";
-import { sleep } from "../utils/helpers";
 
 export class StellarService {
   constructor(walletKit, publicKey) {
     this.walletKit = walletKit;
     this.publicKey = publicKey;
-    this.server = new StellarSdk.SorobanRpc.Server(
-      STELLAR_CONFIG.sorobanRpcUrl
-    );
+    this.server = new StellarSdk.rpc.Server(STELLAR_CONFIG.sorobanRpcUrl);
   }
 
   async invokeContract(contractId, method, params = []) {
     try {
-      const contract = new StellarSdk.Contract(contractId);
-      const account = await this.server.getAccount(this.publicKey);
+      console.log("📤 Creating contract call:", { contractId, method });
 
-      const transaction = new StellarSdk.TransactionBuilder(account, {
-        fee: StellarSdk.BASE_FEE,
-        networkPassphrase: STELLAR_CONFIG.networkPassphrase,
-      })
+      const contract = new StellarSdk.Contract(contractId);
+      const sourceAccount = await this.server.getAccount(this.publicKey);
+
+      // Build transaction
+      const builtTransaction = new StellarSdk.TransactionBuilder(
+        sourceAccount,
+        {
+          fee: "100000",
+          networkPassphrase: STELLAR_CONFIG.networkPassphrase,
+        }
+      )
         .addOperation(contract.call(method, ...params))
-        .setTimeout(30)
+        .setTimeout(180)
         .build();
 
-      const preparedTx = await this.server.prepareTransaction(transaction);
-      const { signedTxXdr } = await this.walletKit.signTransaction(
-        preparedTx.toXDR()
+      console.log("🔧 Preparing transaction...");
+
+      // Prepare transaction
+      const preparedTransaction = await this.server.prepareTransaction(
+        builtTransaction
       );
 
-      const tx = StellarSdk.TransactionBuilder.fromXDR(
-        signedTxXdr,
+      console.log("✍️ Signing transaction...");
+
+      // Sign with wallet
+      const signedXDR = await this.walletKit.sign(preparedTransaction.toXDR(), {
+        networkPassphrase: STELLAR_CONFIG.networkPassphrase,
+      });
+
+      console.log("📨 Submitting to network...");
+
+      // Parse signed transaction
+      const signedTx = StellarSdk.TransactionBuilder.fromXDR(
+        signedXDR,
         STELLAR_CONFIG.networkPassphrase
       );
 
-      const result = await this.server.sendTransaction(tx);
-      return await this.waitForTransaction(result.hash);
+      // Send transaction
+      const response = await this.server.sendTransaction(signedTx);
+
+      console.log("✅ Transaction submitted:", response.hash);
+
+      // Return immediately - don't wait
+      return {
+        hash: response.hash,
+        status: "SUBMITTED",
+      };
     } catch (error) {
-      console.error("Contract invocation failed:", error);
+      console.error("❌ Transaction failed:", error);
+
+      // Better error messages
+      if (error.message?.includes("insufficient")) {
+        throw new Error("Insufficient XLM balance. Please fund your account.");
+      }
+
+      if (error.message?.includes("not authorized")) {
+        throw new Error(
+          "Transaction not authorized. Please check wallet connection."
+        );
+      }
+
       throw new Error(error.message || "Transaction failed");
     }
   }
@@ -46,9 +80,9 @@ export class StellarService {
   async simulateContract(contractId, method, params = []) {
     try {
       const contract = new StellarSdk.Contract(contractId);
-      const account = await this.server.getAccount(this.publicKey);
+      const sourceAccount = await this.server.getAccount(this.publicKey);
 
-      const transaction = new StellarSdk.TransactionBuilder(account, {
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
         fee: StellarSdk.BASE_FEE,
         networkPassphrase: STELLAR_CONFIG.networkPassphrase,
       })
@@ -56,45 +90,16 @@ export class StellarService {
         .setTimeout(30)
         .build();
 
-      const result = await this.server.simulateTransaction(transaction);
+      const simulated = await this.server.simulateTransaction(transaction);
 
-      if (result.results && result.results[0]) {
-        return StellarSdk.scValToNative(result.results[0].retval);
+      if (simulated.results?.[0]?.retval) {
+        return StellarSdk.scValToNative(simulated.results[0].retval);
       }
 
       return null;
     } catch (error) {
-      console.error("Contract simulation failed:", error);
-      throw error;
+      console.error("Simulation failed:", error);
+      return null;
     }
-  }
-
-  async waitForTransaction(hash, maxAttempts = 30) {
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      try {
-        const status = await this.server.getTransaction(hash);
-
-        if (status.status === TRANSACTION_STATUS.SUCCESS) {
-          return status;
-        }
-
-        if (status.status === TRANSACTION_STATUS.FAILED) {
-          throw new Error("Transaction failed");
-        }
-
-        await sleep(1000);
-        attempts++;
-      } catch (error) {
-        if (attempts >= maxAttempts - 1) {
-          throw new Error("Transaction timeout");
-        }
-        await sleep(1000);
-        attempts++;
-      }
-    }
-
-    throw new Error("Transaction timeout");
   }
 }

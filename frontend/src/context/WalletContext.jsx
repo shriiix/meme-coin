@@ -6,6 +6,7 @@ import {
   FreighterModule,
   xBullModule,
 } from "@creit.tech/stellar-wallets-kit";
+import toast from "react-hot-toast";
 
 const WalletContext = createContext();
 
@@ -24,7 +25,6 @@ export const WalletProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Initialize wallet kit
     const walletKit = new StellarWalletsKit({
       network: WalletNetwork.TESTNET,
       selectedWalletId: FREIGHTER_ID,
@@ -32,7 +32,6 @@ export const WalletProvider = ({ children }) => {
     });
     setKit(walletKit);
 
-    // Check if wallet was previously connected
     const savedPublicKey = localStorage.getItem("walletPublicKey");
     if (savedPublicKey) {
       setPublicKey(savedPublicKey);
@@ -50,12 +49,12 @@ export const WalletProvider = ({ children }) => {
           setPublicKey(address);
           setIsConnected(true);
           localStorage.setItem("walletPublicKey", address);
-          console.log("✅ Wallet connected:", address);
+          toast.success("Wallet connected successfully!");
         },
       });
     } catch (error) {
-      console.error("❌ Wallet connection failed:", error);
-      alert("Failed to connect wallet. Please try again.");
+      console.error("Wallet connection failed:", error);
+      toast.error("Failed to connect wallet. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -65,11 +64,25 @@ export const WalletProvider = ({ children }) => {
     setPublicKey(null);
     setIsConnected(false);
     localStorage.removeItem("walletPublicKey");
-    console.log("🔌 Wallet disconnected");
+    toast.success("Wallet disconnected");
+  };
+
+  // Custom sign method that works with the kit
+  const signTransaction = async (xdr, options) => {
+    try {
+      const result = await kit.sign(xdr, options);
+      return result;
+    } catch (error) {
+      console.error("Sign failed:", error);
+      throw error;
+    }
   };
 
   const value = {
-    kit,
+    kit: {
+      ...kit,
+      sign: signTransaction,
+    },
     publicKey,
     isConnected,
     isLoading,

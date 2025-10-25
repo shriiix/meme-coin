@@ -5,6 +5,8 @@ export class WalletService {
   constructor(walletKit, publicKey) {
     this.walletKit = walletKit;
     this.publicKey = publicKey;
+
+    // Fix: Use Horizon Server for account operations
     this.horizonServer = new StellarSdk.Horizon.Server(
       STELLAR_CONFIG.horizonUrl
     );

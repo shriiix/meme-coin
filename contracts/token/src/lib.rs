@@ -1,9 +1,8 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, token, Address, Env, String, Symbol,
+    contract, contractimpl, contracttype, Address, Env, String,
 };
-use soroban_token_sdk::{metadata::TokenMetadata, TokenUtils};
 
 #[derive(Clone)]
 #[contracttype]
@@ -17,23 +16,23 @@ pub struct AllowanceDataKey {
 pub enum DataKey {
     Allowance(AllowanceDataKey),
     Balance(Address),
-    State(Address),
+    TotalSupply,
+    Decimals,
+    Name,
+    Symbol,
     Admin,
 }
 
 fn has_administrator(e: &Env) -> bool {
-    let key = DataKey::Admin;
-    e.storage().instance().has(&key)
+    e.storage().instance().has(&DataKey::Admin)
 }
 
 fn read_administrator(e: &Env) -> Address {
-    let key = DataKey::Admin;
-    e.storage().instance().get(&key).unwrap()
+    e.storage().instance().get(&DataKey::Admin).unwrap()
 }
 
 fn write_administrator(e: &Env, id: &Address) {
-    let key = DataKey::Admin;
-    e.storage().instance().set(&key, id);
+    e.storage().instance().set(&DataKey::Admin, id);
 }
 
 pub fn check_nonnegative_amount(amount: i128) {
@@ -44,11 +43,10 @@ pub fn check_nonnegative_amount(amount: i128) {
 
 fn read_balance(e: &Env, addr: Address) -> i128 {
     let key = DataKey::Balance(addr);
-    if let Some(balance) = e.storage().persistent().get::<DataKey, i128>(&key) {
-        balance
-    } else {
-        0
-    }
+    e.storage()
+        .persistent()
+        .get::<DataKey, i128>(&key)
+        .unwrap_or(0)
 }
 
 fn write_balance(e: &Env, addr: Address, amount: i128) {
@@ -85,14 +83,11 @@ impl Token {
             panic!("Decimal must not be greater than 18");
         }
 
-        TokenUtils::new(&e).set_metadata(
-            &TokenMetadata {
-                decimal,
-                name,
-                symbol,
-            },
-            false,
-        );
+        // Store metadata directly
+        e.storage().instance().set(&DataKey::Decimals, &decimal);
+        e.storage().instance().set(&DataKey::Name, &name);
+        e.storage().instance().set(&DataKey::Symbol, &symbol);
+        e.storage().instance().set(&DataKey::TotalSupply, &0i128);
     }
 
     pub fn mint(e: Env, to: Address, amount: i128) {
@@ -101,7 +96,19 @@ impl Token {
         admin.require_auth();
 
         receive_balance(&e, to.clone(), amount);
-        TokenUtils::new(&e).events().mint(admin, to, amount);
+        
+        // Update total supply
+        let total: i128 = e.storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        e.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total + amount));
+
+        // Emit event
+        e.events()
+            .publish(("mint", admin), (to, amount));
     }
 
     pub fn allowance(e: Env, from: Address, spender: Address) -> i128 {
@@ -114,7 +121,6 @@ impl Token {
 
     pub fn approve(e: Env, from: Address, spender: Address, amount: i128, expiration_ledger: u32) {
         from.require_auth();
-
         check_nonnegative_amount(amount);
 
         let key = DataKey::Allowance(AllowanceDataKey {
@@ -132,9 +138,8 @@ impl Token {
             e.storage().temporary().extend_ttl(&key, live_for, live_for);
         }
 
-        TokenUtils::new(&e)
-            .events()
-            .approve(from, spender, amount, expiration_ledger);
+        e.events()
+            .publish(("approve", from), (spender, amount, expiration_ledger));
     }
 
     pub fn balance(e: Env, id: Address) -> i128 {
@@ -143,18 +148,17 @@ impl Token {
 
     pub fn transfer(e: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
-
         check_nonnegative_amount(amount);
 
         spend_balance(&e, from.clone(), amount);
         receive_balance(&e, to.clone(), amount);
 
-        TokenUtils::new(&e).events().transfer(from, to, amount);
+        e.events()
+            .publish(("transfer", from), (to, amount));
     }
 
     pub fn transfer_from(e: Env, spender: Address, from: Address, to: Address, amount: i128) {
         spender.require_auth();
-
         check_nonnegative_amount(amount);
 
         let allowance = Self::allowance(e.clone(), from.clone(), spender.clone());
@@ -172,21 +176,31 @@ impl Token {
         });
         e.storage().temporary().set(&key, &new_allowance);
 
-        TokenUtils::new(&e).events().transfer(from, to, amount);
+        e.events()
+            .publish(("transfer", from), (to, amount));
     }
 
     pub fn burn(e: Env, from: Address, amount: i128) {
         from.require_auth();
-
         check_nonnegative_amount(amount);
 
         spend_balance(&e, from.clone(), amount);
-        TokenUtils::new(&e).events().burn(from, amount);
+        
+        // Update total supply
+        let total: i128 = e.storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        e.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total - amount));
+
+        e.events()
+            .publish(("burn", from.clone()), amount);
     }
 
     pub fn burn_from(e: Env, spender: Address, from: Address, amount: i128) {
         spender.require_auth();
-
         check_nonnegative_amount(amount);
 
         let allowance = Self::allowance(e.clone(), from.clone(), spender.clone());
@@ -203,18 +217,44 @@ impl Token {
         });
         e.storage().temporary().set(&key, &new_allowance);
 
-        TokenUtils::new(&e).events().burn(from, amount);
+        // Update total supply
+        let total: i128 = e.storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0);
+        e.storage()
+            .instance()
+            .set(&DataKey::TotalSupply, &(total - amount));
+
+        e.events()
+            .publish(("burn", from.clone()), amount);
     }
 
     pub fn decimals(e: Env) -> u32 {
-        TokenUtils::new(&e).metadata().decimals
+        e.storage()
+            .instance()
+            .get(&DataKey::Decimals)
+            .unwrap_or(7)
     }
 
     pub fn name(e: Env) -> String {
-        TokenUtils::new(&e).metadata().name
+        e.storage()
+            .instance()
+            .get(&DataKey::Name)
+            .unwrap_or(String::from_str(&e, "Unknown"))
     }
 
     pub fn symbol(e: Env) -> String {
-        TokenUtils::new(&e).metadata().symbol
+        e.storage()
+            .instance()
+            .get(&DataKey::Symbol)
+            .unwrap_or(String::from_str(&e, "UNKN"))
+    }
+
+    pub fn total_supply(e: Env) -> i128 {
+        e.storage()
+            .instance()
+            .get(&DataKey::TotalSupply)
+            .unwrap_or(0)
     }
 }

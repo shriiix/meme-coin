@@ -3,7 +3,7 @@
 mod storage;
 mod types;
 
-use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, Vec};
+use soroban_sdk::{contract, contractimpl, Address, Env, Symbol, Vec, Val, IntoVal};
 
 use storage::*;
 use types::*;
@@ -44,11 +44,12 @@ impl DEX {
 
         // Transfer tokens from seller to DEX contract (escrow)
         let transfer_fn = Symbol::new(&e, "transfer");
-        let _: () = e.invoke_contract(
-            &token_address,
-            &transfer_fn,
-            (&seller, &e.current_contract_address(), &amount).into(),
-        );
+        let mut transfer_args = Vec::new(&e);
+        transfer_args.push_back(seller.to_val());
+        transfer_args.push_back(e.current_contract_address().to_val());
+        transfer_args.push_back(amount.into_val(&e));
+        
+        let _: Val = e.invoke_contract(&token_address, &transfer_fn, transfer_args);
 
         // Create order
         let mut order_id = get_order_counter(&e);
@@ -98,11 +99,12 @@ impl DEX {
 
         // Transfer tokens from DEX to buyer
         let transfer_fn = Symbol::new(&e, "transfer");
-        let _: () = e.invoke_contract(
-            &order.token_address,
-            &transfer_fn,
-            (&e.current_contract_address(), &buyer, &order.amount).into(),
-        );
+        let mut transfer_args = Vec::new(&e);
+        transfer_args.push_back(e.current_contract_address().to_val());
+        transfer_args.push_back(buyer.to_val());
+        transfer_args.push_back(order.amount.into_val(&e));
+        
+        let _: Val = e.invoke_contract(&order.token_address, &transfer_fn, transfer_args);
 
         // Update order status
         order.status = OrderStatus::Filled;
@@ -150,11 +152,12 @@ impl DEX {
 
         // Return tokens to seller
         let transfer_fn = Symbol::new(&e, "transfer");
-        let _: () = e.invoke_contract(
-            &order.token_address,
-            &transfer_fn,
-            (&e.current_contract_address(), &seller, &order.amount).into(),
-        );
+        let mut transfer_args = Vec::new(&e);
+        transfer_args.push_back(e.current_contract_address().to_val());
+        transfer_args.push_back(seller.to_val());
+        transfer_args.push_back(order.amount.into_val(&e));
+        
+        let _: Val = e.invoke_contract(&order.token_address, &transfer_fn, transfer_args);
 
         // Update order status
         order.status = OrderStatus::Cancelled;

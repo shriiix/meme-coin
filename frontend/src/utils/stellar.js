@@ -2,7 +2,7 @@ import * as StellarSdk from "stellar-sdk";
 import { STELLAR_CONFIG } from "../config/stellar.config";
 
 export const createServer = () => {
-  return new StellarSdk.SorobanRpc.Server(STELLAR_CONFIG.sorobanRpcUrl);
+  return new StellarSdk.rpc.Server(STELLAR_CONFIG.sorobanRpcUrl);
 };
 
 export const createHorizonServer = () => {
@@ -31,5 +31,5 @@ export const nativeToScVal = (value, type) => {
 };
 
 export const addressToScVal = (address) => {
-  return StellarSdk.Address.fromString(address).toScVal();
+  return new StellarSdk.Address(address).toScVal();
 };
