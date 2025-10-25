@@ -17,3 +17,15 @@ Create, trade, and discover meme coins on the Stellar blockchain.
 - Freighter or xBull wallet
 
 ### Installation
+
+# Stellar Smart Contracts - MemeCoin Platform
+
+This directory contains all Soroban smart contracts for the meme coin platform.
+
+## Contracts
+
+1. **Token Contract** - Standard CAP-46-6 compliant token
+2. **Token Factory** - Creates and manages meme coins
+3. **DEX** - Decentralized exchange for trading tokens
+
+## Prerequisites
