@@ -1,93 +1,99 @@
-import React, { useState } from "react";
-import {
-  formatNumber,
-  formatAddress,
-  stroopsToXLM,
-} from "../../utils/formatting";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import Card from "../common/Card";
-import TradeModal from "../trading/TradeModal";
-import Button from "../common/Button";
 
 export default function TokenCard({ token }) {
-  const [showTradeModal, setShowTradeModal] = useState(false);
-  const [tradeType, setTradeType] = useState("buy"); // 'buy' | 'sell'
+  const navigate = useNavigate();
 
-  const handleTrade = (type) => {
-    setTradeType(type);
-    setShowTradeModal(true);
+  const formatSupply = (supply, decimals = 7) => {
+    try {
+      // Handle BigInt conversion
+      const supplyNum = typeof supply === "bigint" ? Number(supply) : supply;
+      const decimalsNum =
+        typeof decimals === "bigint" ? Number(decimals) : decimals;
+
+      // Calculate the actual value
+      const divisor = Math.pow(10, decimalsNum);
+      const formattedValue = (supplyNum / divisor).toLocaleString(undefined, {
+        maximumFractionDigits: 2,
+      });
+
+      return formattedValue;
+    } catch (error) {
+      console.error("Error formatting supply:", error);
+      return "0";
+    }
+  };
+
+  const formatAddress = (address) => {
+    if (!address) return "N/A";
+    if (address.length <= 16) return address;
+    return `${address.slice(0, 8)}...${address.slice(-6)}`;
   };
 
   return (
-    <>
-      <Card hover className="flex flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full flex items-center justify-center text-2xl">
-              {token.symbol?.charAt(0) || "🪙"}
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-800">
-                {token.symbol}
-              </h3>
-              <p className="text-sm text-gray-600">{token.name}</p>
-            </div>
-          </div>
-          <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold">
-            Meme
+    <Card
+      className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105"
+      onClick={() => navigate(`/token/${token.token_id}`)}
+    >
+      {/* Token Header */}
+      <div className="flex items-center space-x-4 mb-4">
+        <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <span className="text-2xl font-bold text-white">
+            {token.symbol?.charAt(0) || "?"}
           </span>
         </div>
-
-        {/* Stats */}
-        <div className="flex-1 space-y-3 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Total Supply</span>
-            <span className="text-sm font-semibold text-gray-800">
-              {formatNumber(stroopsToXLM(token.total_supply))}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Creator</span>
-            <span className="text-sm font-mono text-gray-800">
-              {formatAddress(token.creator, 4, 4)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Decimals</span>
-            <span className="text-sm font-semibold text-gray-800">
-              {token.decimals}
-            </span>
-          </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-xl text-gray-800 truncate">
+            {token.name || "Unknown Token"}
+          </h3>
+          <p className="text-sm text-gray-600 font-semibold">
+            {token.symbol || "???"}
+          </p>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-200">
-          <Button
-            variant="success"
-            size="sm"
-            onClick={() => handleTrade("buy")}
-            fullWidth
-          >
-            Buy
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleTrade("sell")}
-            fullWidth
-          >
-            Sell
-          </Button>
+      {/* Token Stats */}
+      <div className="space-y-3 mb-4">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">Total Supply</span>
+          <span className="font-semibold text-gray-800">
+            {formatSupply(token.total_supply, token.decimals)}
+          </span>
         </div>
-      </Card>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">Decimals</span>
+          <span className="font-semibold text-gray-800">
+            {typeof token.decimals === "bigint"
+              ? Number(token.decimals)
+              : token.decimals}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-gray-600">Token ID</span>
+          <span className="font-semibold text-purple-600">
+            #
+            {typeof token.token_id === "bigint"
+              ? Number(token.token_id)
+              : token.token_id}
+          </span>
+        </div>
+      </div>
 
-      {/* Trade Modal */}
-      <TradeModal
-        isOpen={showTradeModal}
-        onClose={() => setShowTradeModal(false)}
-        token={token}
-        type={tradeType}
-      />
-    </>
+      {/* Contract Address */}
+      <div className="pt-4 border-t border-gray-200">
+        <p className="text-xs text-gray-500 mb-1">Contract Address</p>
+        <p className="text-xs font-mono text-gray-700 truncate">
+          {formatAddress(token.contract_address)}
+        </p>
+      </div>
+
+      {/* Hover indicator */}
+      <div className="mt-4 text-center">
+        <span className="text-xs text-purple-600 font-semibold">
+          Click to view details →
+        </span>
+      </div>
+    </Card>
   );
 }

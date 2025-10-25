@@ -15,21 +15,38 @@ export default function CreateToken() {
 
   const handleSubmit = async (formData) => {
     setLoading(true);
+    const toastId = toast.loading("Creating token...");
+
     try {
+      console.log("📝 Creating token with data:", formData);
+
       const service = new TokenFactoryService(kit, publicKey);
-      await service.createToken(
+      const result = await service.createToken(
         formData.name,
         formData.symbol,
         formData.decimals,
         formData.initialSupply
       );
 
-      toast.success("Token created successfully! 🎉");
-      refreshTokens();
-      navigate("/");
+      console.log("✅ Token creation result:", result);
+
+      toast.success("Token created successfully! 🎉", { id: toastId });
+
+      // Wait for transaction to be processed
+      console.log("⏳ Waiting for blockchain confirmation...");
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      // Refresh token list
+      console.log("🔄 Refreshing token list...");
+      await refreshTokens();
+
+      // Navigate to dashboard
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch (error) {
-      console.error("Token creation failed:", error);
-      toast.error(error.message || "Failed to create token");
+      console.error("❌ Token creation failed:", error);
+      toast.error(error.message || "Failed to create token", { id: toastId });
     } finally {
       setLoading(false);
     }
