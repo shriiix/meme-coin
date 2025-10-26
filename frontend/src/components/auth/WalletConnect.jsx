@@ -21,7 +21,7 @@ export default function WalletConnect() {
             <span className="text-6xl">🚀</span>
           </div>
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            MemeCoin Platform
+            StellarCoin
           </h1>
           <p className="text-gray-600">
             Create, Trade, and Discover Meme Coins on Stellar

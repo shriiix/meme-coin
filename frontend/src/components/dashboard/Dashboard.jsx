@@ -15,7 +15,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard</h1>
           <p className="text-gray-600">
-            Explore and trade meme coins on Stellar
+            Explore and trade StellarCoin on Stellar
           </p>
         </div>
         {/* <Link to="/create">
