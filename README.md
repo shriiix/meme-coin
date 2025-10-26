@@ -1,27 +1,60 @@
-# MemeCoin Platform
+# 🚀 Stellar Meme DEX
 
-Create, trade, and discover meme coins on Stellar using Soroban smart contracts and a React + Vite frontend.
+> Create and trade meme coins in 30 seconds with $0.01 fees
 
-Table of contents
-- [About](#about)
-- [Features](#features)
-- [Architecture & folders](#architecture--folders)
-- [Prerequisites](#prerequisites)
-- [Quick start (local)](#quick-start-local)
-- [Contracts: build & test](#contracts-build--test)
-- [Frontend](#frontend)
-- [Scripts](#scripts)
-- [Contributing](#contributing)
-- [License](#license)
+A decentralized meme coin launchpad on Stellar featuring automated market maker (AMM) for instant token creation and trading.
 
-## About
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Stellar](https://img.shields.io/badge/Stellar-Soroban-purple.svg)](https://stellar.org)
 
-This repository implements a small decentralized exchange and token platform on Stellar using Soroban smart contracts. It includes:
+## ⚡ Quick Start
 
-- Smart contracts (Rust) for tokens, a token factory, and a DEX located under `contracts/`.
-- A React frontend (Vite) to interact with the contracts under `frontend/`.
-- Helper scripts for building, deploying and testing the contracts in `scripts/`.
+## ✨ Features
 
-## Feature
+- **30-Second Token Creation** - No coding required
+- **Instant Trading** - AMM (x\*y=k) ensures always-on liquidity
+- **$0.01 Fees** - 1000x cheaper than Ethereum
+- **Live Charts** - Real-time price tracking
+- **3-5s Finality** - Faster than any major blockchain
 
+## 🏗️ Tech Stack
 
+**Frontend:** React, Vite, TailwindCSS, Recharts  
+**Blockchain:** Stellar Soroban (Rust), Stellar SDK  
+**Smart Contract:** AMM with constant product formula
+
+## 📖 How It Works
+
+1. **Connect** Freighter wallet
+2. **Create** token (name, symbol, supply)
+3. **Trade** instantly with automatic pricing
+4. **Watch** live price updates after each swap
+
+## 🎯 Why Stellar?
+
+- **Speed**: 3-5 second finality vs 12+ seconds on Ethereum
+- **Cost**: < $0.01 per transaction vs $50+ on Ethereum
+- **Scale**: 7M+ existing accounts ready to onboard
+
+## 📊 AMM Formula
+
+## 🗺️ Roadmap
+
+- [x] MVP with AMM trading
+- [ ] Mobile app
+- [ ] Advanced analytics
+- [ ] Governance token
+- [ ] Cross-chain bridge
+
+## 📄 License
+
+MIT © ShridharGhadi
+
+## 🤝 Contact
+
+**Twitter**: [@yourhandle](https://twitter.com/yourhandle)  
+**Email**: your.email@example.com
+
+---
+
+_Making meme coins great again - on Stellar_ 🌟
