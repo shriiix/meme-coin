@@ -21,12 +21,7 @@ export default function Statistics() {
       icon: "💰",
       color: "from-blue-400 to-blue-600",
     },
-    {
-      label: "Active Trades",
-      value: "0",
-      icon: "📈",
-      color: "from-green-400 to-green-600",
-    },
+
     {
       label: "Network",
       value: "Testnet",
