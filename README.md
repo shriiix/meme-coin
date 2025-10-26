@@ -1,19 +1,27 @@
-# 🚀 MemeCoin Platform
+# MemeCoin Platform
 
-Create, trade, and discover meme coins on the Stellar blockchain.
+Create, trade, and discover meme coins on Stellar using Soroban smart contracts and a React + Vite frontend.
 
-## Features
+Table of contents
+- [About](#about)
+- [Features](#features)
+- [Architecture & folders](#architecture--folders)
+- [Prerequisites](#prerequisites)
+- [Quick start (local)](#quick-start-local)
+- [Contracts: build & test](#contracts-build--test)
+- [Frontend](#frontend)
+- [Scripts](#scripts)
+- [Contributing](#contributing)
+- [License](#license)
 
-- 🪙 **Create Tokens** - Launch your own meme coin in seconds
-- 💰 **Trade** - Buy and sell tokens with low fees
-- ⚡ **Fast** - Built on Stellar for speed and efficiency
-- 🔒 **Secure** - Powered by Soroban smart contracts
+## About
 
-## Getting Started
+This repository implements a small decentralized exchange and token platform on Stellar using Soroban smart contracts. It includes:
 
-### Prerequisites
+- Smart contracts (Rust) for tokens, a token factory, and a DEX located under `contracts/`.
+- A React frontend (Vite) to interact with the contracts under `frontend/`.
+- Helper scripts for building, deploying and testing the contracts in `scripts/`.
 
-- Node.js 18+
-- Freighter or xBull wallet
+## Feature
 
-### Installation
+
