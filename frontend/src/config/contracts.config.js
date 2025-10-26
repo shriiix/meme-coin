@@ -1,6 +1,6 @@
 export const CONTRACTS = {
-  tokenFactory: import.meta.env.VITE_TOKEN_FACTORY_CONTRACT_ID || "",
-  dex: import.meta.env.VITE_DEX_CONTRACT_ID || "",
+  tokenFactory: import.meta.env.VITE_TOKEN_FACTORY_CONTRACT_ID,
+  dex: import.meta.env.VITE_DEX_CONTRACT_ID, // ← Add this
 };
 
 export const validateContracts = () => {

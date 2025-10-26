@@ -38,8 +38,9 @@ export default function SellForm({ token, onSuccess }) {
     if (!validate()) return;
 
     try {
+      // Use contract_address instead of contract_id
       await createSellOrder(
-        token.contract_id,
+        token.contract_address,
         parseFloat(formData.amount),
         parseFloat(formData.price)
       );
@@ -63,7 +64,7 @@ export default function SellForm({ token, onSuccess }) {
         placeholder="0.00"
         error={errors.amount}
         helperText={`How many ${token.symbol} to sell`}
-        step="0.0000001"
+        step="0.0001"
         required
       />
 
@@ -76,7 +77,7 @@ export default function SellForm({ token, onSuccess }) {
         placeholder="0.00"
         error={errors.price}
         helperText="Price in XLM per token"
-        step="0.0000001"
+        step="0.0001"
         required
       />
 
