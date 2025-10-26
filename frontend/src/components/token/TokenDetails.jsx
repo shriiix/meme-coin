@@ -148,7 +148,6 @@ export default function TokenDetails() {
           </Card>
         </div>
 
-        {/* Order Book - Right Side */}
         <div className="lg:col-span-2">
           <Card>
             <h3 className="font-bold text-2xl mb-6">Order Book</h3>

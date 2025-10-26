@@ -52,6 +52,11 @@ MIT © ShridharGhadi
 
 ## 🤝 Contact
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> ce18674d422d260b19b87c2e71a7dd69b7f34c12
 ---
 
 _Making meme coins great again - on Stellar_ 🌟
