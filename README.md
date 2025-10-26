@@ -52,9 +52,6 @@ MIT © ShridharGhadi
 
 ## 🤝 Contact
 
-**Twitter**: [@yourhandle](https://twitter.com/yourhandle)  
-**Email**: your.email@example.com
-
 ---
 
 _Making meme coins great again - on Stellar_ 🌟
