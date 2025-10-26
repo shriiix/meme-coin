@@ -8,11 +8,11 @@ export default function Footer() {
           {/* About */}
           <div>
             <h3 className="text-lg font-bold text-gray-800 mb-4">
-              🚀 MemeCoin Platform
+              🚀 StellarCoin Platform
             </h3>
             <p className="text-gray-600 text-sm">
-              Create, trade, and discover meme coins on the Stellar blockchain.
-              Fast, secure, and fun!
+              Create, trade, and discover StellarCoins on the Stellar
+              blockchain. Fast, secure, and fun!
             </p>
           </div>
 

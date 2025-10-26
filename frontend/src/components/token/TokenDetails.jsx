@@ -6,7 +6,7 @@ import Card from "../common/Card";
 import Button from "../common/Button";
 import BuyForm from "../trading/BuyForm";
 import SellForm from "../trading/SellForm";
-
+import PriceChart from "../chart/PriceChart";
 export default function TokenDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -115,7 +115,7 @@ export default function TokenDetails() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button onClick={() => setShowBuyModal(true)}>💰 Buy</Button>
+            {/* <Button onClick={() => setShowBuyModal(true)}>💰 Buy</Button> */}
             <Button onClick={() => setShowSellModal(true)} variant="secondary">
               💸 Sell
             </Button>
@@ -148,7 +148,6 @@ export default function TokenDetails() {
           </Card>
         </div>
 
-        {/* Order Book - Right Side */}
         <div className="lg:col-span-2">
           <Card>
             <h3 className="font-bold text-2xl mb-6">Order Book</h3>
